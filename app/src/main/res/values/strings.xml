@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">SDKLibrary</string>
+
+    <string name="msg_read_succeed">Read succeed</string>
+    <string name="err_access_op_failed">Tag Write operation Failed</string>
+
+    <string-array name="acess_read_write_memory_bank_array">
+        <item>EPC</item>
+        <item>TID</item>
+        <item>USER</item>
+        <item>ACCESS PASSWORD</item>
+        <item>KILL PASSWORD</item>
+    </string-array>
+
+    <string-array name="pre_filter_type">
+        <item>Basic</item>
+        <item>Advanced</item>
+    </string-array>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
