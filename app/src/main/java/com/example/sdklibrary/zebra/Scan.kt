@@ -1,5 +1,6 @@
 package com.example.sdklibrary.zebra
 
+import android.util.Log
 import com.zebra.rfid.api3.ACCESS_OPERATION_CODE
 import com.zebra.rfid.api3.InvalidUsageException
 import com.zebra.rfid.api3.MEMORY_BANK
@@ -7,13 +8,24 @@ import com.zebra.rfid.api3.OperationFailureException
 import com.zebra.rfid.api3.RFIDReader
 import com.zebra.rfid.api3.TagAccess
 
-class Scan {
+class Scan(private val handlerRFID: Connect) {
 
     private var reader: RFIDReader? = null
 
+    fun connectReader() {
+        reader = handlerRFID.reader
+        if (reader == null) {
+            Log.e("Scan", "Reader not connected.")
+        }
+    }
+
     fun startScan() {
         try {
-            reader!!.Actions.Inventory.perform()
+            if (reader != null && reader!!.isConnected) {
+                reader!!.Actions.Inventory.perform()
+            } else {
+                Log.e("Scan", "Reader is null or not connected.")
+            }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
         } catch (e: OperationFailureException) {
@@ -23,12 +35,17 @@ class Scan {
 
     fun stopScan() {
         try {
-            reader!!.Actions.Inventory.stop()
+            if (reader != null && reader!!.isConnected) {
+                reader!!.Actions.Inventory.stop()
+            } else {
+                Log.e("Scan", "Reader is null or not connected.")
+            }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
         } catch (e: OperationFailureException) {
             e.printStackTrace()
         }
+
     }
 
     fun performInventoryAll() {

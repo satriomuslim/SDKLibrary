@@ -1,8 +1,10 @@
 package com.example.sdklibrary.zebra
 
+import android.app.Activity
 import android.content.Context
 import android.os.AsyncTask
 import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import com.zebra.rfid.api3.ENUM_TRANSPORT
 import com.zebra.rfid.api3.ENUM_TRIGGER_MODE
 import com.zebra.rfid.api3.HANDHELD_TRIGGER_EVENT_TYPE
@@ -27,7 +29,6 @@ import com.zebra.scannercontrol.DCSScannerInfo
 import com.zebra.scannercontrol.FirmwareUpdateEvent
 import com.zebra.scannercontrol.IDcsSdkApiDelegate
 import com.zebra.scannercontrol.SDKHandler
-import java.util.ArrayList
 
 class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDReaderEventHandler {
 
@@ -41,8 +42,6 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
         }
     }
 
-
-
     private var availableRFIDReaderList: ArrayList<ReaderDevice>? = null
     private var readerDevice: ReaderDevice? = null
     var reader: RFIDReader? = null
@@ -51,6 +50,9 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
     private var scannerList: ArrayList<DCSScannerInfo>? = null
     private var scannerID = 0
     private var maxPower = 270
+
+    val connectionStatus = MutableLiveData<String>()
+    val isLoading = MutableLiveData<Boolean>()
 
     private var readerName = "RFD4031-G10B700-US"
 
@@ -90,7 +92,7 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
 
         override fun doInBackground(vararg voids: Void?): Void? {
             Log.d(TAG, "CreateInstanceTask")
-            // Based on support available coon host device choose the reader type
+            // Based on support available on host device choose the reader type
             var invalidUsageException: InvalidUsageException? = null
             readers = Readers(context, ENUM_TRANSPORT.SERVICE_USB)
             try {
@@ -122,6 +124,12 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
 
     private inner class ConnectionTask :
         AsyncTask<Void?, Void?, String>() {
+
+        override fun onPreExecute() {
+            isLoading.value = true
+            connectionStatus.value = "Connecting..."
+        }
+
         override fun doInBackground(vararg voids: Void?): String {
             Log.d(TAG, "ConnectionTask")
             getAvailableReader()
@@ -129,8 +137,8 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
         }
 
         override fun onPostExecute(result: String) {
-            super.onPostExecute(result)
-
+            isLoading.value = false
+            connectionStatus.value = result
         }
 
     }
@@ -148,7 +156,7 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
                     if (availableRFIDReaderList!!.size != 0) {
                         for (device in availableRFIDReaderList!!) {
                             Log.d("getAvailableReader", "Device Name: ${device.name}")
-                            Log.d("getAvailableReader", "Device Info: ${device.toString()}")
+                            Log.d("getAvailableReader", "Device Info: $device")
                         }
                         // if single reader is available then connect it
                         if (availableRFIDReaderList!!.size == 1) {
@@ -173,6 +181,19 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
                 ie.printStackTrace()
             }
         }
+    }
+
+    // handler for receiving reader appearance events
+    override fun RFIDReaderAppeared(readerDevice: ReaderDevice) {
+        Log.d(TAG, "RFIDReaderAppeared " + readerDevice.name)
+//        context.sendToast("RFIDReaderAppeared")
+//        connectReader()
+    }
+
+    override fun RFIDReaderDisappeared(readerDevice: ReaderDevice) {
+        Log.d(TAG, "RFIDReaderDisappeared " + readerDevice.name)
+//        context.sendToast("RFIDReaderDisappeared")
+        if (readerDevice.name == reader!!.hostName) disconnect()
     }
 
     @Synchronized
@@ -252,26 +273,33 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
         if (sdkHandler == null) {
             sdkHandler = SDKHandler(context)
 
-            //For bluetooth device
-            val btResult =
-                sdkHandler!!.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_LE)
-            val btNormalResult =
-                sdkHandler!!.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_NORMAL)
-            Log.d(TAG, "$btNormalResult results $btResult")
-            sdkHandler!!.dcssdkSetDelegate(this)
-            var notificationsMask = 0
-            // We would like to subscribe to all scanner available/not-available events
-            notificationsMask =
-                notificationsMask or (DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value or DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value)
+            (context as? Activity)?.runOnUiThread {
+                // For Bluetooth device
+                val btResult = sdkHandler!!.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_LE)
+                val btNormalResult = sdkHandler!!.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_NORMAL)
+                Log.d(TAG, "$btNormalResult results $btResult")
 
-            // We would like to subscribe to all scanner connection events
-            notificationsMask =
-                notificationsMask or (DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value or DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value or DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value or DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value)
+                sdkHandler!!.dcssdkSetDelegate(this)
+                var notificationsMask = 0
+                // We would like to subscribe to all scanner available/not-available events
+                notificationsMask = notificationsMask or (
+                        DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value or
+                                DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value
+                        )
 
-            // We would like to subscribe to all barcode events
-            // subscribe to events set in notification mask
-            sdkHandler!!.dcssdkSubsribeForEvents(notificationsMask)
+                // We would like to subscribe to all scanner connection events
+                notificationsMask = notificationsMask or (
+                        DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value or
+                                DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value or
+                                DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value
+                        )
+
+                // Subscribe to events set in notification mask
+                sdkHandler!!.dcssdkSubsribeForEvents(notificationsMask)
+            }
         }
+
+        // Ensure the SDKHandler works with available scanners
         if (sdkHandler != null) {
             val availableScanners: ArrayList<DCSScannerInfo> = sdkHandler!!.dcssdkGetAvailableScannersList() as ArrayList<DCSScannerInfo>
             scannerList!!.clear()
@@ -279,6 +307,8 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
                 scannerList!!.add(scanner)
             }
         }
+
+        // Try to establish communication with scanner
         if (reader != null) {
             for (device in scannerList!!) {
                 if (device.scannerName.contains(reader!!.hostName)) {
@@ -304,6 +334,8 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
                     scannerList = null
                 }
                 reader!!.disconnect()
+//                context.sendToast("Disconnecting reader")
+                //reader = null;
             }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
@@ -319,6 +351,7 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
         disconnect()
         try {
             if (reader != null) {
+                //Toast.makeText(getApplicationContext(), "Disconnecting reader", Toast.LENGTH_LONG).show();
                 reader = null
                 readers!!.Dispose()
                 readers = null
@@ -328,12 +361,26 @@ class Connect(private val context: Context) : IDcsSdkApiDelegate, Readers.RFIDRe
         }
     }
 
-    override fun RFIDReaderAppeared(p0: ReaderDevice?) {
-
+    @Synchronized
+    fun performInventory() {
+        try {
+            reader!!.Actions.Inventory.perform()
+        } catch (e: InvalidUsageException) {
+            e.printStackTrace()
+        } catch (e: OperationFailureException) {
+            e.printStackTrace()
+        }
     }
 
-    override fun RFIDReaderDisappeared(p0: ReaderDevice?) {
-
+    @Synchronized
+    fun stopInventory() {
+        try {
+            reader!!.Actions.Inventory.stop()
+        } catch (e: InvalidUsageException) {
+            e.printStackTrace()
+        } catch (e: OperationFailureException) {
+            e.printStackTrace()
+        }
     }
 
     // Read/Status Notify handler
