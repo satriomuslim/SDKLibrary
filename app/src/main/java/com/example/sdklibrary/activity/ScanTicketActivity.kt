@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.sdklibrary.databinding.ActivityScanTicketBinding
+import com.example.sdklibrary.zebra.Battery
 
 class ScanTicketActivity : AppCompatActivity() {
 

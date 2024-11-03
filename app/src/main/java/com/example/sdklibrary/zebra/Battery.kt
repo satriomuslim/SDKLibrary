@@ -19,6 +19,7 @@ class Battery {
         }
     }
 
+
     fun getHealth() {
         try {
             val batteryStats = reader!!.Config.batteryStats
