@@ -1,6 +1,7 @@
 package com.example.sdklibrary.zebra
 
 import android.os.AsyncTask
+import android.util.ArrayMap
 import android.util.Log
 import com.zebra.rfid.api3.HANDHELD_TRIGGER_EVENT_TYPE
 import com.zebra.rfid.api3.InvalidUsageException
@@ -12,7 +13,7 @@ import com.zebra.rfid.api3.RfidStatusEvents
 import com.zebra.rfid.api3.STATUS_EVENT_TYPE
 import com.zebra.rfid.api3.TagData
 
-class Locate (
+class MultiLocate (
     private val handlerRFID: Connect,
     private val responseHandler: ResponseHandlerInterface
 ) {
@@ -28,10 +29,21 @@ class Locate (
         }
     }
 
-    fun startSingleTagLocate(tagID: String) {
+    fun initMultiTagLocate(tagID: ArrayMap<String, String>) {
+        try {
+            reader?.Actions?.MultiTagLocate?.purgeItemList()
+            reader?.Actions?.MultiTagLocate?.importItemList(tagID)
+        } catch (e: InvalidUsageException) {
+            e.printStackTrace()
+        } catch (e: OperationFailureException) {
+            e.printStackTrace()
+        }
+    }
+
+    fun startMultiTagLocate() {
         try {
             if (reader != null && reader!!.isConnected) {
-                reader?.Actions?.TagLocationing?.Perform(tagID, null, null)
+                reader?.Actions?.MultiTagLocate?.perform()
             } else {
                 Log.e("RFIDHandler", "Reader is not connected")
             }
@@ -40,10 +52,10 @@ class Locate (
         }
     }
 
-    fun stopSingleTagLocate(tagID: String) {
+    fun stopMultiTagLocate() {
         try {
             if (reader != null && reader!!.isConnected) {
-                reader?.Actions?.TagLocationing?.Stop();
+                reader?.Actions?.MultiTagLocate?.stop()
             } else {
                 Log.e("RFIDHandler", "Reader is not connected")
             }
@@ -56,13 +68,14 @@ class Locate (
     // Implement the RfidEventsLister class to receive event notifications
     inner class EventHandler : RfidEventsListener {
         // Read Event Notification
-        override fun eventReadNotify(e: RfidReadEvents?) {
-            val myTags = reader!!.Actions.getReadTags(100)
+        override fun eventReadNotify(e: RfidReadEvents) {
+            val myTags: Array<TagData>? = reader?.Actions?.getMultiTagLocateTagInfo(100)
             if (myTags != null) {
                 for (index in myTags.indices) {
-                    Log.d(TAG, "Tag ID " + myTags[index].tagID)
-                    if (myTags[index].isContainsLocationInfo) {
-                        Log.d(TAG, "Tag locationing distance " + myTags[index].LocationInfo.relativeDistance)
+                    Log.d("MultiTagLocate", "Tag ID " + myTags[index].tagID)
+                    if (myTags[index].isContainsMultiTagLocateInfo) {
+                        //Get correcponding Tag locate info
+                        Log.d("MultiTagLocate", "${myTags[index].tagID} - Distance: ${myTags[index].MultiTagLocateInfo.relativeDistance}")
                     }
                 }
                 AsyncDataUpdate().execute(arrayOf(*myTags))

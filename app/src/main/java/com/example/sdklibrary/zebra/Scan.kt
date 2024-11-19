@@ -50,17 +50,21 @@ class Scan(private val handlerRFID: Connect) {
 
     fun performInventoryAll() {
         try {
-            val memoryBanksToRead = arrayOf(MEMORY_BANK.MEMORY_BANK_EPC, MEMORY_BANK.MEMORY_BANK_TID, MEMORY_BANK.MEMORY_BANK_USER, MEMORY_BANK.MEMORY_BANK_RESERVED);
-            for (bank in memoryBanksToRead) {
-                val ta = TagAccess()
-                val sequence = ta.Sequence(ta)
-                val op = sequence.Operation()
-                op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
-                op.ReadAccessParams.memoryBank = bank ?: throw IllegalArgumentException("bank must not be null")
-                reader!!.Actions.TagAccess.OperationSequence.add(op)
-            }
+            if (reader != null && reader!!.isConnected) {
+                val memoryBanksToRead = arrayOf(MEMORY_BANK.MEMORY_BANK_EPC, MEMORY_BANK.MEMORY_BANK_TID, MEMORY_BANK.MEMORY_BANK_USER, MEMORY_BANK.MEMORY_BANK_RESERVED);
+                for (bank in memoryBanksToRead) {
+                    val ta = TagAccess()
+                    val sequence = ta.Sequence(ta)
+                    val op = sequence.Operation()
+                    op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
+                    op.ReadAccessParams.memoryBank = bank ?: throw IllegalArgumentException("bank must not be null")
+                    reader!!.Actions.TagAccess.OperationSequence.add(op)
+                }
 
-            reader!!.Actions.TagAccess.OperationSequence.performSequence()
+                reader!!.Actions.TagAccess.OperationSequence.performSequence()
+            } else {
+                Log.e("Scan", "Reader is null or not connected.")
+            }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
         } catch (e: OperationFailureException) {
@@ -70,14 +74,18 @@ class Scan(private val handlerRFID: Connect) {
 
     fun performInventoryEPC() {
         try {
-            val ta = TagAccess()
-            val sequence = ta.Sequence(ta)
-            val op = sequence.Operation()
-            op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
-            op.ReadAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_EPC
-            reader!!.Actions.TagAccess.OperationSequence.add(op)
+            if (reader != null && reader!!.isConnected) {
+                val ta = TagAccess()
+                val sequence = ta.Sequence(ta)
+                val op = sequence.Operation()
+                op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
+                op.ReadAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_EPC
+                reader!!.Actions.TagAccess.OperationSequence.add(op)
 
-            reader!!.Actions.TagAccess.OperationSequence.performSequence()
+                reader!!.Actions.TagAccess.OperationSequence.performSequence()
+            } else {
+                Log.e("Scan", "Reader is null or not connected.")
+            }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
         } catch (e: OperationFailureException) {
@@ -87,14 +95,18 @@ class Scan(private val handlerRFID: Connect) {
 
     fun performInventoryReserved() {
         try {
-            val ta = TagAccess()
-            val sequence = ta.Sequence(ta)
-            val op = sequence.Operation()
-            op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
-            op.ReadAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_RESERVED
-            reader!!.Actions.TagAccess.OperationSequence.add(op)
+            if (reader != null && reader!!.isConnected) {
+                val ta = TagAccess()
+                val sequence = ta.Sequence(ta)
+                val op = sequence.Operation()
+                op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
+                op.ReadAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_RESERVED
+                reader!!.Actions.TagAccess.OperationSequence.add(op)
 
-            reader!!.Actions.TagAccess.OperationSequence.performSequence()
+                reader!!.Actions.TagAccess.OperationSequence.performSequence()
+            } else {
+                Log.e("Scan", "Reader is null or not connected.")
+            }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
         } catch (e: OperationFailureException) {
@@ -104,14 +116,18 @@ class Scan(private val handlerRFID: Connect) {
 
     fun performInventoryTID() {
         try {
-            val ta = TagAccess()
-            val sequence = ta.Sequence(ta)
-            val op = sequence.Operation()
-            op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
-            op.ReadAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_TID
-            reader!!.Actions.TagAccess.OperationSequence.add(op)
+            if (reader != null && reader!!.isConnected) {
+                val ta = TagAccess()
+                val sequence = ta.Sequence(ta)
+                val op = sequence.Operation()
+                op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
+                op.ReadAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_TID
+                reader!!.Actions.TagAccess.OperationSequence.add(op)
 
-            reader!!.Actions.TagAccess.OperationSequence.performSequence()
+                reader!!.Actions.TagAccess.OperationSequence.performSequence()
+            } else {
+                Log.e("Scan", "Reader is null or not connected.")
+            }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
         } catch (e: OperationFailureException) {
@@ -121,14 +137,18 @@ class Scan(private val handlerRFID: Connect) {
 
     fun performInventoryUser() {
         try {
-            val ta = TagAccess()
-            val sequence = ta.Sequence(ta)
-            val op = sequence.Operation()
-            op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
-            op.ReadAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_USER
-            reader!!.Actions.TagAccess.OperationSequence.add(op)
+            if (reader != null && reader!!.isConnected) {
+                val ta = TagAccess()
+                val sequence = ta.Sequence(ta)
+                val op = sequence.Operation()
+                op.accessOperationCode = ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
+                op.ReadAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_USER
+                reader!!.Actions.TagAccess.OperationSequence.add(op)
 
-            reader!!.Actions.TagAccess.OperationSequence.performSequence()
+                reader!!.Actions.TagAccess.OperationSequence.performSequence()
+            } else {
+                Log.e("Scan", "Reader is null or not connected.")
+            }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
         } catch (e: OperationFailureException) {
@@ -138,11 +158,16 @@ class Scan(private val handlerRFID: Connect) {
 
     fun stopInventory() {
         try {
-            reader!!.Actions.TagAccess.OperationSequence.stopSequence()
+            if (reader != null && reader!!.isConnected) {
+                reader!!.Actions.TagAccess.OperationSequence.stopSequence()
+            } else {
+                Log.e("Scan", "Reader is null or not connected.")
+            }
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
         } catch (e: OperationFailureException) {
             e.printStackTrace()
         }
     }
+
 }

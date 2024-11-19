@@ -12,137 +12,81 @@ import com.zebra.rfid.api3.RFIDReader
 import com.zebra.rfid.api3.TagAccess
 import java.util.Locale
 
-class Read (private var context: Context) {
+class Read (private var context: Context, private val handlerRFID: Connect) {
 
     private var reader: RFIDReader? = null
 
-    fun setReadEPC(tagID : String) {
-        try {
-            val tagAccess = TagAccess()
-            val readAccessParams = tagAccess.ReadAccessParams()
-            readAccessParams.accessPassword = 0
-
-            readAccessParams.count = 4
-
-            readAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_EPC
-
-            readAccessParams.offset = 0
-
-            val tagData = reader!!.Actions.TagAccess.readWait(tagID, readAccessParams, null)
-
-            if (tagData != null) {
-                val readAccessOperation: ACCESS_OPERATION_CODE = tagData.opCode
-                if (readAccessOperation != null) {
-                    if (tagData.opStatus != null && !tagData.opStatus
-                            .equals(ACCESS_OPERATION_STATUS.ACCESS_SUCCESS)
-                    ) {
-                        val strErr: String = tagData.opStatus.toString().replace("_", " ")
-                        Toast.makeText(context, strErr.lowercase(Locale.getDefault()), Toast.LENGTH_SHORT).show()
-                    } else {
-                        if (tagData.opCode === ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ) {
-                            Toast.makeText(context, "Berhasil " + tagData.memoryBankData, Toast.LENGTH_SHORT).show()
-                            Log.d("MEMORY BANK", "Memory TID : ${tagData.memoryBankData}")
-                        } else {
-
-                        }
-                    }
-                } else {
-                    Toast.makeText(context, "Data success to write", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                Toast.makeText(context, "Data success to write", Toast.LENGTH_SHORT).show()
-            }
-
-        } catch (e: InvalidUsageException) {
-            e.printStackTrace()
-            Toast.makeText(context, "Failed to set data", Toast.LENGTH_SHORT).show()
-        } catch (e: OperationFailureException) {
-            e.printStackTrace()
-            Toast.makeText(context, "Failed to set data 1", Toast.LENGTH_SHORT).show()
+    fun connectReader() {
+        reader = handlerRFID.reader
+        if (reader == null) {
+            Log.e("Beeper", "Reader not connected.")
+        } else {
+            Log.e("Beeper", "Reader not connect.")
         }
     }
 
-    fun setReadReserved(tagID : String) {
+    fun setReadEPC(tagID: String): String {
         try {
-            val tagAccess = TagAccess()
-            val readAccessParams = tagAccess.ReadAccessParams()
-            readAccessParams.accessPassword = 0
+            if (reader != null && reader!!.isConnected) {
+                val tagAccess = TagAccess()
+                val readAccessParams = tagAccess.ReadAccessParams()
+                readAccessParams.accessPassword = 0
+                readAccessParams.count = 4
+                readAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_EPC
+                readAccessParams.offset = 0
 
-            readAccessParams.count = 4
+                val tagData = reader!!.Actions.TagAccess.readWait(tagID, readAccessParams, null)
 
-            readAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_RESERVED
-
-            readAccessParams.offset = 0
-
-            val tagData = reader!!.Actions.TagAccess.readWait(tagID, readAccessParams, null)
-
-            if (tagData != null) {
-                val readAccessOperation: ACCESS_OPERATION_CODE = tagData.opCode
-                if (readAccessOperation != null) {
-                    if (tagData.opStatus != null && !tagData.opStatus
-                            .equals(ACCESS_OPERATION_STATUS.ACCESS_SUCCESS)
+                if (tagData != null) {
+                    if (tagData.opStatus == ACCESS_OPERATION_STATUS.ACCESS_SUCCESS &&
+                        tagData.opCode == ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
                     ) {
-                        val strErr: String = tagData.opStatus.toString().replace("_", " ")
-                        Toast.makeText(context, strErr.lowercase(Locale.getDefault()), Toast.LENGTH_SHORT).show()
+                        return "Read Successful: ${tagData.memoryBankData}"
                     } else {
-                        if (tagData.opCode === ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ) {
-                            Toast.makeText(context, "Berhasil " + tagData.memoryBankData, Toast.LENGTH_SHORT).show()
-                            Log.d("MEMORY BANK", "Memory TID : ${tagData.memoryBankData}")
-                        } else {
-
-                        }
+                        val error = tagData.opStatus.toString().replace("_", " ")
+                        return "Read Failed: $error"
                     }
-                } else {
-                    Toast.makeText(context, "Data success to write", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(context, "Data success to write", Toast.LENGTH_SHORT).show()
+                return "Reader not connected."
             }
-
         } catch (e: InvalidUsageException) {
             e.printStackTrace()
-            Toast.makeText(context, "Failed to set data", Toast.LENGTH_SHORT).show()
+            return "Read Failed: Invalid usage"
         } catch (e: OperationFailureException) {
             e.printStackTrace()
-            Toast.makeText(context, "Failed to set data 1", Toast.LENGTH_SHORT).show()
+            return "Read Failed: Operation failure"
         }
+        return "Read Failed: Unknown error"
     }
 
-    fun setReadTID(tagID : String) {
+    fun setReadReserved(tagID : String): String{
         try {
-            val tagAccess = TagAccess()
-            val readAccessParams = tagAccess.ReadAccessParams()
-            readAccessParams.accessPassword = 0
+            if (reader != null && reader!!.isConnected) {
+                val tagAccess = TagAccess()
+                val readAccessParams = tagAccess.ReadAccessParams()
+                readAccessParams.accessPassword = 0
 
-            readAccessParams.count = 4
+                readAccessParams.count = 4
 
-            readAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_TID
+                readAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_RESERVED
 
-            readAccessParams.offset = 0
+                readAccessParams.offset = 0
 
-            val tagData = reader!!.Actions.TagAccess.readWait(tagID, readAccessParams, null)
+                val tagData = reader!!.Actions.TagAccess.readWait(tagID, readAccessParams, null)
 
-            if (tagData != null) {
-                val readAccessOperation: ACCESS_OPERATION_CODE = tagData.opCode
-                if (readAccessOperation != null) {
-                    if (tagData.opStatus != null && !tagData.opStatus
-                            .equals(ACCESS_OPERATION_STATUS.ACCESS_SUCCESS)
+                if (tagData != null) {
+                    if (tagData.opStatus == ACCESS_OPERATION_STATUS.ACCESS_SUCCESS &&
+                        tagData.opCode == ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
                     ) {
-                        val strErr: String = tagData.opStatus.toString().replace("_", " ")
-                        Toast.makeText(context, strErr.lowercase(Locale.getDefault()), Toast.LENGTH_SHORT).show()
+                        return "Read Successful: ${tagData.memoryBankData}"
                     } else {
-                        if (tagData.opCode === ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ) {
-                            Toast.makeText(context, "Berhasil " + tagData.memoryBankData, Toast.LENGTH_SHORT).show()
-                            Log.d("MEMORY BANK", "Memory TID : ${tagData.memoryBankData}")
-                        } else {
-
-                        }
+                        val error = tagData.opStatus.toString().replace("_", " ")
+                        return "Read Failed: $error"
                     }
-                } else {
-                    Toast.makeText(context, "Data success to write", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(context, "Data success to write", Toast.LENGTH_SHORT).show()
+                return "Reader not connected."
             }
 
         } catch (e: InvalidUsageException) {
@@ -152,43 +96,36 @@ class Read (private var context: Context) {
             e.printStackTrace()
             Toast.makeText(context, "Failed to set data 1", Toast.LENGTH_SHORT).show()
         }
+        return "Read Failed: Unknown error"
     }
 
-    fun setReadUser(tagID : String) {
+    fun setReadTID(tagID : String): String {
         try {
-            val tagAccess = TagAccess()
-            val readAccessParams = tagAccess.ReadAccessParams()
-            readAccessParams.accessPassword = 0
+            if (reader != null && reader!!.isConnected) {
+                val tagAccess = TagAccess()
+                val readAccessParams = tagAccess.ReadAccessParams()
+                readAccessParams.accessPassword = 0
 
-            readAccessParams.count = 4
+                readAccessParams.count = 4
 
-            readAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_USER
+                readAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_TID
 
-            readAccessParams.offset = 0
+                readAccessParams.offset = 0
 
-            val tagData = reader!!.Actions.TagAccess.readWait(tagID, readAccessParams, null)
+                val tagData = reader!!.Actions.TagAccess.readWait(tagID, readAccessParams, null)
 
-            if (tagData != null) {
-                val readAccessOperation: ACCESS_OPERATION_CODE = tagData.opCode
-                if (readAccessOperation != null) {
-                    if (tagData.opStatus != null && !tagData.opStatus
-                            .equals(ACCESS_OPERATION_STATUS.ACCESS_SUCCESS)
+                if (tagData != null) {
+                    if (tagData.opStatus == ACCESS_OPERATION_STATUS.ACCESS_SUCCESS &&
+                        tagData.opCode == ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
                     ) {
-                        val strErr: String = tagData.opStatus.toString().replace("_", " ")
-                        Toast.makeText(context, strErr.lowercase(Locale.getDefault()), Toast.LENGTH_SHORT).show()
+                        return "Read Successful: ${tagData.memoryBankData}"
                     } else {
-                        if (tagData.opCode === ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ) {
-                            Toast.makeText(context, "Berhasil " + tagData.memoryBankData, Toast.LENGTH_SHORT).show()
-                            Log.d("MEMORY BANK", "Memory TID : ${tagData.memoryBankData}")
-                        } else {
-
-                        }
+                        val error = tagData.opStatus.toString().replace("_", " ")
+                        return "Read Failed: $error"
                     }
-                } else {
-                    Toast.makeText(context, "Data success to write", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(context, "Data success to write", Toast.LENGTH_SHORT).show()
+                return "Reader not connected."
             }
 
         } catch (e: InvalidUsageException) {
@@ -198,6 +135,47 @@ class Read (private var context: Context) {
             e.printStackTrace()
             Toast.makeText(context, "Failed to set data 1", Toast.LENGTH_SHORT).show()
         }
+        return "Read Failed: Unknown error"
+    }
+
+    fun setReadUser(tagID : String): String {
+        try {
+            if (reader != null && reader!!.isConnected) {
+
+                val tagAccess = TagAccess()
+                val readAccessParams = tagAccess.ReadAccessParams()
+                readAccessParams.accessPassword = 0
+
+                readAccessParams.count = 4
+
+                readAccessParams.memoryBank = MEMORY_BANK.MEMORY_BANK_USER
+
+                readAccessParams.offset = 0
+
+                val tagData = reader!!.Actions.TagAccess.readWait(tagID, readAccessParams, null)
+
+                if (tagData != null) {
+                    if (tagData.opStatus == ACCESS_OPERATION_STATUS.ACCESS_SUCCESS &&
+                        tagData.opCode == ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ
+                    ) {
+                        return "Read Successful: ${tagData.memoryBankData}"
+                    } else {
+                        val error = tagData.opStatus.toString().replace("_", " ")
+                        return "Read Failed: $error"
+                    }
+                }
+            } else {
+                return "Reader not connected."
+            }
+
+        } catch (e: InvalidUsageException) {
+            e.printStackTrace()
+            Toast.makeText(context, "Failed to set data", Toast.LENGTH_SHORT).show()
+        } catch (e: OperationFailureException) {
+            e.printStackTrace()
+            Toast.makeText(context, "Failed to set data 1", Toast.LENGTH_SHORT).show()
+        }
+        return "Read Failed: Unknown error"
     }
 
 }
